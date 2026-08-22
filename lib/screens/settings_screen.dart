@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -10,28 +10,27 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
-  bool _isNotifEnabled = true;
-  String _fcmToken = "Menunggu token dari Firebase...";
+  String _fcmToken = 'Memuat token...';
+  bool _notificationsEnabled = true;
 
   @override
   void initState() {
     super.initState();
-    _loadSettings();
+    _getFcmToken();
   }
 
-  void _loadSettings() async {
-    final prefs = await SharedPreferences.getInstance();
-    setState(() {
-      // Default true jika belum pernah diset
-      _isNotifEnabled = prefs.getBool('notif_enabled') ?? true;
-      _fcmToken = prefs.getString('fcm_token') ?? "Token belum digenerate...";
-    });
-  }
-
-  void _toggleNotif(bool value) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('notif_enabled', value);
-    setState(() => _isNotifEnabled = value);
+  // Fungsi untuk mengambil token FCM dari Firebase
+  Future<void> _getFcmToken() async {
+    try {
+      String? token = await FirebaseMessaging.instance.getToken();
+      setState(() {
+        _fcmToken = token ?? 'Gagal mendapatkan token';
+      });
+    } catch (e) {
+      setState(() {
+        _fcmToken = 'Error: $e';
+      });
+    }
   }
 
   @override
@@ -41,26 +40,54 @@ class _SettingsScreenState extends State<SettingsScreen> {
       body: ListView(
         padding: const EdgeInsets.all(16.0),
         children: [
+          // Bagian Switch Notifikasi
           SwitchListTile(
             title: const Text('Terima Notifikasi'),
             subtitle: const Text(
               'Aktifkan untuk menerima update event relawan',
             ),
-            value: _isNotifEnabled,
-            onChanged: _toggleNotif,
+            value: _notificationsEnabled,
+            onChanged: (bool value) {
+              setState(() {
+                _notificationsEnabled = value;
+              });
+            },
           ),
-          const Divider(),
-          ListTile(
-            title: const Text('FCM Token'),
-            subtitle: Text(_fcmToken),
-            trailing: IconButton(
-              icon: const Icon(Icons.copy),
-              onPressed: () {
-                Clipboard.setData(ClipboardData(text: _fcmToken));
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('FCM Token berhasil disalin!')),
-                );
-              },
+          const Divider(height: 32),
+
+          // Bagian Tampil & Copy FCM Token
+          const Text(
+            'FCM Token',
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+          ),
+          const SizedBox(height: 8),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.grey[200],
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(_fcmToken, style: const TextStyle(fontSize: 12)),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.copy),
+                  onPressed: () {
+                    if (_fcmToken.isNotEmpty &&
+                        !_fcmToken.startsWith('Memuat') &&
+                        !_fcmToken.startsWith('Error')) {
+                      Clipboard.setData(ClipboardData(text: _fcmToken));
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Token berhasil disalin ke clipboard!'),
+                        ),
+                      );
+                    }
+                  },
+                ),
+              ],
             ),
           ),
         ],
