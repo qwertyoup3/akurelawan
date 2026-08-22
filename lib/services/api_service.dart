@@ -1,65 +1,80 @@
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/event_model.dart';
-import '../models/user_model.dart';
 import '../utils/constants.dart';
 
 class ApiService {
-  // Login Endpoint
+  // 1. LOGIN: Ambil data users dari MockAPI dan cocokkan email
   static Future<bool> login(String email, String password) async {
-    final response = await http.post(
-      Uri.parse('${AppConstants.baseUrl}/auth/login'),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({'email': email, 'password': password}),
-    );
+    try {
+      final response = await http.get(
+        Uri.parse('${AppConstants.baseUrl}/users'),
+      );
 
-    if (response.statusCode == 200 || response.statusCode == 201) {
-      final data = jsonDecode(response.body);
-      final token = data['token'] ?? data['access_token'];
+      if (response.statusCode == 200) {
+        List users = jsonDecode(response.body);
 
-      // Simpan JWT Token ke local storage
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('jwt_token', token);
-      return true;
+        // Cari user berdasarkan email
+        final user = users.firstWhere(
+          (u) => u['email'] == email,
+          orElse: () => null,
+        );
+
+        if (user != null) {
+          // Simpan sesi login sederhana menggunakan SharedPreferences
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setString('jwt_token', 'mock_jwt_token_${user['id']}');
+          await prefs.setString('user_role', user['role'] ?? 'organizer');
+          await prefs.setString('user_name', user['name'] ?? 'User');
+          return true;
+        }
+      }
+      return false;
+    } catch (e) {
+      debugPrint('Login Network Error: $e');
+      return false;
     }
-    return false;
   }
 
-  // Get User Profile (/auth/me)
-  static Future<UserModel?> getProfile() async {
-    final prefs = await SharedPreferences.getInstance();
-    final token = prefs.getString('jwt_token');
-
-    final response = await http.get(
-      Uri.parse('${AppConstants.baseUrl}/auth/me'),
-      headers: {'Authorization': 'Bearer $token'},
-    );
-
-    if (response.statusCode == 200) {
-      return UserModel.fromJson(jsonDecode(response.body));
-    }
-    return null;
-  }
-
-  // Get Events List
+  // 2. GET EVENTS: Ambil daftar event dari MockAPI
   static Future<List<EventModel>> getEvents({
     String search = '',
     int page = 1,
   }) async {
-    final response = await http.get(
-      Uri.parse(
-        '${AppConstants.baseUrl}/events?search=$search&page=$page&per_page=10',
-      ),
-    );
+    try {
+      final response = await http.get(
+        Uri.parse('${AppConstants.baseUrl}/events'),
+      );
 
-    if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
-      final List list = data['data'] ?? data;
-      return list.map((e) => EventModel.fromJson(e)).toList();
+      if (response.statusCode == 200) {
+        List data = jsonDecode(response.body);
+        List<EventModel> events = data
+            .map((json) => EventModel.fromJson(json))
+            .toList();
+
+        // Jika ada parameter search, filter secara lokal dari hasil MockAPI
+        if (search.isNotEmpty) {
+          events = events
+              .where(
+                (event) =>
+                    event.title.toLowerCase().contains(search.toLowerCase()) ||
+                    event.description.toLowerCase().contains(
+                      search.toLowerCase(),
+                    ),
+              )
+              .toList();
+        }
+
+        return events;
+      }
+      return [];
+    } catch (e) {
+      debugPrint('Get Events Network Error: $e');
+      return [];
     }
-    return [];
   }
 }

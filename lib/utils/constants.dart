@@ -1,3 +1,4 @@
 class AppConstants {
-  static const String baseUrl = 'http://10.0.2.2:3000/api'; 
+  static const String baseUrl =
+      'https://6a89d90e20fcac8c1edf060e.mockapi.io/api/akurelawan';
 }

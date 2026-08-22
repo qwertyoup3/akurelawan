@@ -1,3 +1,5 @@
+import 'package:akurelawan/screens/detail_screen.dart';
+import 'package:akurelawan/screens/settings_screen.dart';
 import 'package:flutter/material.dart';
 
 import '../models/event_model.dart';
@@ -23,6 +25,40 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Daftar Event AkuRelawan')),
+
+      // TAMBAHKAN DRAWER INI
+      drawer: Drawer(
+        child: ListView(
+          padding: EdgeInsets.zero,
+          children: [
+            const DrawerHeader(
+              decoration: BoxDecoration(color: Colors.green),
+              child: Text(
+                'AkuRelawan',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+            ListTile(
+              leading: const Icon(Icons.settings),
+              title: const Text('Pengaturan Notifikasi'),
+              onTap: () {
+                Navigator.pop(context); // Tutup drawer
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const SettingsScreen(),
+                  ),
+                );
+              },
+            ),
+          ],
+        ),
+      ),
+
       body: FutureBuilder<List<EventModel>>(
         future: _futureEvents,
         builder: (context, snapshot) {
@@ -48,6 +84,16 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                   subtitle: Text('${event.venue}\nStatus: ${event.status}'),
                   isThreeLine: true,
+
+                  // TAMBAHKAN ONTAP INI
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => DetailScreen(event: event),
+                      ),
+                    );
+                  },
                 ),
               );
             },
