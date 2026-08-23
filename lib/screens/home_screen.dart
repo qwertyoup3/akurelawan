@@ -82,7 +82,9 @@ class _HomeScreenState extends State<HomeScreen> {
                     event.title,
                     style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
-                  subtitle: Text('${event.venue}\nStatus: ${event.status}'),
+                  subtitle: Text(
+                    '${event.type} • ${event.affectedRegions}\nStatus: ${event.status}',
+                  ),
                   isThreeLine: true,
 
                   // TAMBAHKAN ONTAP INI

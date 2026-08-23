@@ -9,7 +9,7 @@ class DetailScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Detail Event')),
+      appBar: AppBar(title: const Text('Detail Bencana')),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -22,22 +22,37 @@ class DetailScreen extends StatelessWidget {
             const SizedBox(height: 8),
             Row(
               children: [
-                const Icon(Icons.location_on, color: Colors.red, size: 20),
+                const Icon(Icons.category, color: Colors.orange, size: 20),
                 const SizedBox(width: 4),
-                Text(event.venue, style: const TextStyle(fontSize: 16)),
+                Text(event.type, style: const TextStyle(fontSize: 16)),
               ],
             ),
             const SizedBox(height: 8),
             Row(
               children: [
-                const Icon(Icons.calendar_today, color: Colors.blue, size: 20),
+                const Icon(Icons.location_on, color: Colors.red, size: 20),
                 const SizedBox(width: 4),
-                Text('${event.startDatetime} - ${event.endDatetime}'),
+                Expanded(child: Text(event.affectedRegions)),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                const Icon(Icons.warning, color: Colors.deepOrange, size: 20),
+                const SizedBox(width: 4),
+                Text(event.urgencyLevel),
+                const SizedBox(width: 12),
+                Chip(
+                  label: Text(event.status),
+                  backgroundColor: event.status == 'Aktif'
+                      ? Colors.red.shade100
+                      : Colors.grey.shade200,
+                ),
               ],
             ),
             const SizedBox(height: 16),
             const Text(
-              'Deskripsi Kegiatan:',
+              'Deskripsi:',
               style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
             ),
             const SizedBox(height: 4),

@@ -3,6 +3,9 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'api_service.dart';
+import '../screens/detail_screen.dart';
+
 // Background handler (Wajib top-level function)
 @pragma('vm:entry-point')
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
@@ -96,7 +99,7 @@ class FcmService {
               priority: Priority.high,
             ),
           ),
-          payload: message.data['order_id'], // Ambil order_id untuk deep-link
+          payload: message.data['event_id'], // Ambil event_id untuk deep-link
         );
       }
     });
@@ -108,39 +111,45 @@ class FcmService {
     RemoteMessage? initialMessage = await FirebaseMessaging.instance
         .getInitialMessage();
     if (initialMessage != null) {
-      String? orderId = initialMessage.data['order_id'];
-      if (orderId != null) {
+      String? eventId = initialMessage.data['event_id'];
+      if (eventId != null) {
         // Beri sedikit jeda agar navigator siap
         Future.delayed(const Duration(seconds: 1), () {
-          _navigateToOrderDetail(orderId, navigatorKey);
+          _navigateToEventDetail(eventId, navigatorKey);
         });
       }
     }
 
     // Ketika aplikasi di background lalu di-klik notifikasinya
     FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
-      String? orderId = message.data['order_id'];
-      if (orderId != null) {
-        _handleDeepLink(orderId, navigatorKey);
+      String? eventId = message.data['event_id'];
+      if (eventId != null) {
+        _handleDeepLink(eventId, navigatorKey);
       }
     });
   }
 
   static void _handleDeepLink(
-    String? orderId,
+    String? eventId,
     GlobalKey<NavigatorState> navigatorKey,
   ) {
-    if (orderId != null && orderId.isNotEmpty) {
-      _navigateToOrderDetail(orderId, navigatorKey);
+    if (eventId != null && eventId.isNotEmpty) {
+      _navigateToEventDetail(eventId, navigatorKey);
     }
   }
 
-  static void _navigateToOrderDetail(
-    String orderId,
+  static void _navigateToEventDetail(
+    String eventId,
     GlobalKey<NavigatorState> navigatorKey,
-  ) {
-    // Navigasi otomatis ke halaman detail menggunakan GlobalKey
-    debugPrint("Deep-link terpanggil ke Order ID: $orderId");
-    // Kamu bisa arahkan ke halaman detail event/order di sini
+  ) async {
+    debugPrint("Deep-link terpanggil ke Event ID: $eventId");
+    final event = await ApiService.getEventById(eventId);
+    if (event != null) {
+      navigatorKey.currentState?.push(
+        MaterialPageRoute(builder: (_) => DetailScreen(event: event)),
+      );
+    } else {
+      debugPrint("Event dengan ID $eventId tidak ditemukan");
+    }
   }
 }

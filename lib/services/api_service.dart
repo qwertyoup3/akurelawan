@@ -77,4 +77,19 @@ class ApiService {
       return [];
     }
   }
+
+  static Future<EventModel?> getEventById(String id) async {
+    try {
+      final response = await http.get(
+        Uri.parse('${AppConstants.baseUrl}/events/$id'),
+      );
+      if (response.statusCode == 200) {
+        return EventModel.fromJson(jsonDecode(response.body));
+      }
+      return null;
+    } catch (e) {
+      debugPrint('Get Event By Id Error: $e');
+      return null;
+    }
+  }
 }
